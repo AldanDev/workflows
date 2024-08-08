@@ -23,10 +23,8 @@ on:
         default: '1.8.2'
       modules:
         type: string
-        default: 'kyt_i18n_lib.cli'  
       AWS_CODEARTIFACT_DOMAIN:
         type: string
-        
 
 jobs:
     test:
