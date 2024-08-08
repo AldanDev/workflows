@@ -21,6 +21,9 @@ on:
       poetry-version:
         type: string
         default: '1.8.2'
+      modules:
+        type: string
+        default: 'kyt_i18n_lib.cli'  
       AWS_CODEARTIFACT_DOMAIN:
         type: string
         
@@ -75,7 +78,7 @@ jobs:
 
         - name: Compile locales
           if: ${{ inputs.use_codeartifact }}
-          run: poetry run python -m kyt_i18n_lib.cli compile
+          run: poetry run python -m ${{ inputs.modules }} compile
 
         - name: Run lint
           run: make lint
