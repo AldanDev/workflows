@@ -1,0 +1,130 @@
+name: CI for changelog
+
+on:
+  workflow_call:
+    secrets:
+      CODEARTIFACT_AWS_ACCESS_KEY_ID:
+        required: false
+      CODEARTIFACT_AWS_SECRET_ACCESS_KEY:
+        required: false
+
+    inputs:
+      use_codeartifact:
+        type: boolean
+        default: false
+      AWS_CODEARTIFACT_REGION:
+        type: string
+        default: 'ap-southeast-1'
+      python-version:
+        type: string
+        default: '3.12'
+      poetry-version:
+        type: string
+        default: '1.8.2'
+      modules:
+        type: string
+      AWS_CODEARTIFACT_DOMAIN:
+        type: string
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    if: github.event_name == 'pull_request' && (github.actor != 'dependabot[bot]' || github.actor != 'dependabot-preview[bot]') 
+    steps:
+      - name: Configure AWS Credentials
+        if: ${{ inputs.use_codeartifact }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.CODEARTIFACT_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.CODEARTIFACT_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_CODEARTIFACT_REGION }}
+
+      - name: Get AWS Code Artifact token
+        if: ${{ inputs.use_codeartifact }}
+        run: >-
+          echo "POETRY_HTTP_BASIC_ARTIFACT_PASSWORD=$(aws
+          codeartifact
+          get-authorization-token
+          --domain ${{ inputs.AWS_CODEARTIFACT_DOMAIN }}
+          --region ${{ inputs.AWS_CODEARTIFACT_REGION  }}
+          --query authorizationToken
+          --output text)"
+          >> $GITHUB_ENV
+
+      - run: sudo apt-get install -y gettext
+
+      - name: Set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1.4
+        with:
+          version: ${{ inputs.poetry-version }}
+
+      - name: Check out current branch
+        uses: actions/checkout@v4
+        with:
+          path: current
+
+      - name: Install dependencies
+        run: poetry install
+        working-directory: current
+
+      - name: Compile locales
+        if: ${{ inputs.use_codeartifact }}
+        run: poetry run python -m ${{ inputs.modules }} compile
+        working-directory: current
+
+      - name: Generate specification
+        run: make generate-spec
+        working-directory: current
+
+      - name: Check out main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: base
+
+      - name: Install dependencies
+        run: poetry install
+        working-directory: base
+
+      - name: Compile locales
+        if: ${{ inputs.use_codeartifact }}
+        run: poetry run python -m ${{ inputs.modules }} compile
+        working-directory: base
+
+      - name: Generate specification
+        run: make generate-spec
+        working-directory: base
+
+      - name: Running OpenAPI Spec diff action
+        id: spec_diff
+        uses: oasdiff/oasdiff-action/changelog@main
+        with:
+          base: base/artefacts/spec.yaml
+          revision: current/artefacts/spec.yaml
+
+      - name: Update pull request
+        uses: nefrob/pr-description@v1.1.2
+        with:
+          content: "<!-- spec_changelog -->\n${{join(steps.spec_diff.outputs.*, '\n')}}\n<!-- spec_changelog -->"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          regex: "<!-- spec_changelog -->.*?<!-- spec_changelog -->"
+          regexFlags: ims
+
+      - name: Add label to PR
+        if: contains(steps.spec_diff.outputs.changelog, 'error	[')
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --add-label breaking-changes
+        working-directory: current
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}     
+  
+      - name: Labeler
+        uses: actions/labeler@v5 
+        with:
+          sync-labels: true
