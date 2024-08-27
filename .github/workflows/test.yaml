@@ -44,6 +44,7 @@ jobs:
             version: ${{ inputs.poetry-version }}
 
         - name: Set up polaris
+          if: ${{ hashFiles('**/polaris.yaml') == '' }}
           uses: fairwindsops/polaris/.github/actions/setup-polaris@master
           with:
             version: 9.2.1
