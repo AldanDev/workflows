@@ -1,4 +1,4 @@
-name: CI for tests
+name: CI for changes
 
 on:
   workflow_call:
@@ -19,3 +19,10 @@ jobs:
         filters: |
           app:
             - 'app/**'
+            - 'alembic/**'
+            - 'tests/**'
+            - 'pyproject.toml'
+            - 'poetry.lock'
+            - 'setup.cfg'
+            - 'Dockerfile'
+            - 'docker-compose.test.yaml'
