@@ -100,6 +100,13 @@ jobs:
         run: make generate-spec
         working-directory: base
 
+      - name: Cat spec
+        run: |
+          echo "base/artefacts/spec.yaml"
+          cat base/artefacts/spec.yaml
+          echo "current/artefacts/spec.yaml"
+          cat current/artefacts/spec.yaml
+
       - name: Running OpenAPI Spec diff action
         id: spec_diff
         uses: oasdiff/oasdiff-action/changelog@main
