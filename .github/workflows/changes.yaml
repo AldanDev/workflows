@@ -26,3 +26,5 @@ jobs:
             - 'setup.cfg'
             - 'Dockerfile'
             - 'docker-compose.test.yaml'
+    - name: echo
+      run: echo "app = ${{ steps.filter.outputs.app }}"
