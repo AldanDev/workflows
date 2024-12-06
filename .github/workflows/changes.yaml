@@ -2,6 +2,10 @@ name: CI for changes
 
 on:
   workflow_call:
+    outputs:
+      app:
+        description: "If chahges in the files"
+        value: ${{ jobs.changes.outputs.app }}
 
 jobs:
   # JOB to run change detection
@@ -26,11 +30,4 @@ jobs:
             - 'setup.cfg'
             - 'Dockerfile'
             - 'docker-compose.test.yaml'
-    
-  test:
-    needs: changes
-    runs-on: ubuntu-latest
-    if: ${{ needs.changes.outputs.app == 'true' }}
-    steps:
-      - name: test
-        run: echo "app = ${{needs.changes.outputs.app}}"
+
