@@ -26,5 +26,11 @@ jobs:
             - 'setup.cfg'
             - 'Dockerfile'
             - 'docker-compose.test.yaml'
-    - name: echo
-      run: echo "app = ${{ steps.filter.outputs.app }}"
+    
+  test:
+    needs: changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.changes.outputs.app == 'true' }}
+    steps:
+      - name: test
+        run: echo "app = ${{needs.changes.outputs.app}}"
