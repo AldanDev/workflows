@@ -21,6 +21,12 @@ on:
       poetry-version:
         type: string
         default: '1.8.2'
+      package-manager:
+        type: choice
+        default: poetry
+        options:
+          - uv
+          - poetry
       modules:
         type: string
       AWS_CODEARTIFACT_DOMAIN:
@@ -60,8 +66,13 @@ jobs:
 
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1.4
+        if: ${{ inputs.package-manager == 'poetry' }}
         with:
           version: ${{ inputs.poetry-version }}
+
+      - name: Install uv
+        if: ${{ inputs.package-manager == 'uv' }}
+        uses: astral-sh/setup-uv@v5
 
       - name: Check out current branch
         uses: actions/checkout@v4
@@ -70,6 +81,12 @@ jobs:
 
       - name: Install dependencies
         run: poetry install
+        if: ${{ inputs.package-manager == 'poetry' }}
+        working-directory: current
+
+      - name: Install dependencies
+        run: uv sync --frozen
+        if: ${{ inputs.package-manager == 'uv' }}
         working-directory: current
 
       - name: Compile locales
@@ -89,6 +106,12 @@ jobs:
 
       - name: Install dependencies
         run: poetry install
+        if: ${{ inputs.package-manager == 'poetry' }}
+        working-directory: base
+
+      - name: Install dependencies
+        run: uv sync --frozen
+        if: ${{ inputs.package-manager == 'uv' }}
         working-directory: base
 
       - name: Compile locales
