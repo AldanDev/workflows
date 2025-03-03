@@ -22,11 +22,8 @@ on:
         type: string
         default: '1.8.2'
       package-manager:
-        type: choice
+        type: string
         default: poetry
-        options:
-          - uv
-          - poetry
       modules:
         type: string
       AWS_CODEARTIFACT_DOMAIN:
