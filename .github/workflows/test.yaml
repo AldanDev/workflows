@@ -21,6 +21,12 @@ on:
       poetry-version:
         type: string
         default: '1.8.2'
+      package-manager:
+        type: choice
+        default: poetry
+        options:
+          - uv
+          - poetry
       modules:
         type: string
       AWS_CODEARTIFACT_DOMAIN:
@@ -40,8 +46,13 @@ jobs:
 
         - name: Install and configure Poetry
           uses: snok/install-poetry@v1.4
+          if: ${{ inputs.package-manager == 'poetry' }}
           with:
             version: ${{ inputs.poetry-version }}
+
+        - name: Install uv
+          if: ${{ inputs.package-manager == 'uv' }}
+          uses: astral-sh/setup-uv@v5
 
         - name: Set up polaris
           if: ${{ hashFiles('**/polaris.yaml') == '' }}
@@ -73,7 +84,12 @@ jobs:
           run: sudo apt-get install -y gettext
 
         - name: Install dependencies
+          if: ${{ inputs.package-manager == 'poetry' }}
           run: poetry install
+
+        - name: Install dependencies
+          if: ${{ inputs.package-manager == 'uv' }}
+          run: uv sync --frozen --group tests --group lint
 
         - name: Compile locales
           if: ${{ inputs.use_codeartifact }}
@@ -86,4 +102,3 @@ jobs:
           run: make docker-test
           env:
             CODEARTIFACT_TOKEN: ${{ env.POETRY_HTTP_BASIC_ARTIFACT_PASSWORD }}
-  

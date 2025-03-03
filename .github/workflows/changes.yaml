@@ -27,6 +27,7 @@ jobs:
             - 'tests/**'
             - 'pyproject.toml'
             - 'poetry.lock'
+            - 'uv.lock'
             - 'setup.cfg'
             - 'Dockerfile'
             - 'docker-compose.test.yaml'
