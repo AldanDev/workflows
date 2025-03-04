@@ -4,7 +4,7 @@ on:
   workflow_call:
     outputs:
       app:
-        description: "If chahges in the files"
+        description: "If changes in the files"
         value: ${{ jobs.changes.outputs.app }}
 
 jobs:
