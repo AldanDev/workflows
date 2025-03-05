@@ -44,17 +44,23 @@ jobs:
 
       - name: Get AWS Code Artifact token
         if: ${{ inputs.use_codeartifact }}
-        run: >-
-          echo "POETRY_HTTP_BASIC_ARTIFACT_PASSWORD=$(aws
-          codeartifact
-          get-authorization-token
-          --domain ${{ inputs.AWS_CODEARTIFACT_DOMAIN }}
-          --region ${{ inputs.AWS_CODEARTIFACT_REGION  }}
-          --query authorizationToken
-          --output text)"
-          >> $GITHUB_ENV
+        run: |
+          echo "AWS_CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token \
+            --domain ${{ inputs.AWS_CODEARTIFACT_DOMAIN }} \
+            --region ${{ inputs.AWS_CODEARTIFACT_REGION }} \
+            --query authorizationToken \
+            --output text)" >> $GITHUB_ENV
+
+      - name: Set Poetry Code Artifact token
+        if: ${{ inputs.use_codeartifact && inputs.package-manager == 'poetry' }}
+        run: echo "POETRY_HTTP_BASIC_ARTIFACT_PASSWORD=$AWS_CODEARTIFACT_TOKEN" >> $GITHUB_ENV
+
+      - name: Set uv Code Artifact token
+        if: ${{ inputs.use_codeartifact && inputs.package-manager == 'uv' }}
+        run: echo "UV_INDEX=https://aws:$AWS_CODEARTIFACT_TOKEN@${{ inputs.AWS_CODEARTIFACT_DOMAIN }}.d.codeartifact.${{ inputs.AWS_CODEARTIFACT_REGION }}.amazonaws.com/pypi/simple/" >> $GITHUB_ENV
 
       - run: sudo apt-get install -y gettext
+        if: ${{ inputs.use_codeartifact }}
 
       - name: Set up python
         uses: actions/setup-python@v5
@@ -112,8 +118,13 @@ jobs:
         working-directory: base
 
       - name: Compile locales
-        if: ${{ inputs.use_codeartifact }}
+        if: ${{ inputs.use_codeartifact && inputs.package-manager == 'poetry' }}
         run: poetry run python -m ${{ inputs.modules }} compile
+        working-directory: base
+
+      - name: Compile locales
+        if: ${{ inputs.use_codeartifact && inputs.package-manager == 'uv' }}
+        run: uv run python -m ${{ inputs.modules }} compile
         working-directory: base
 
       - name: Generate specification
