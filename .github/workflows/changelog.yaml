@@ -28,6 +28,9 @@ on:
         type: string
       AWS_CODEARTIFACT_DOMAIN:
         type: string
+      diff-tool:
+        type: string
+        default: oasdiff
 
 jobs:
   changelog:
@@ -134,26 +137,61 @@ jobs:
       - name: Running OpenAPI Spec diff action
         id: spec_diff
         uses: oasdiff/oasdiff-action/changelog@main
+        if: ${{ inputs.diff-tool == 'oasdiff' }}
         with:
           base: base/artefacts/spec.yaml
           revision: current/artefacts/spec.yaml
 
+      - name: Running OpenAPI Diff action
+        id: spec_diff
+        uses: Pentusha/openapi-diff-action@v0.0.1
+        if: ${{ inputs.diff-tool == 'openapi-diff' }}
+        with:
+          old-spec: base/artefacts/spec.yaml
+          new-spec: current/artefacts/spec.yaml
+          markdown: openapi-diff.md
+
       - name: Update pull request
         uses: nefrob/pr-description@v1.1.2
+        if: ${{ inputs.diff-tool == 'oasdiff' }}
         with:
           content: "<!-- spec_changelog -->\n${{join(steps.spec_diff.outputs.*, '\n')}}\n<!-- spec_changelog -->"
           token: ${{ secrets.GITHUB_TOKEN }}
           regex: "<!-- spec_changelog -->.*?<!-- spec_changelog -->"
           regexFlags: ims
 
+      - name: Read openapi-diff.md file
+        if: ${{ inputs.diff-tool == 'openapi-diff' }}
+        id: read_diff
+        run: |
+          CONTENT=$(cat openapi-diff.md)
+          echo "diff_content=$CONTENT" >> $GITHUB_OUTPUT
+
+      - name: Update pull request
+        uses: nefrob/pr-description@v1.1.2
+        if: ${{ inputs.diff-tool == 'openapi-diff' }}
+        with:
+          content: "<!-- spec_changelog -->\n${{ steps.read_diff.outputs.diff_content }}\n<!-- spec_changelog -->"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          regex: "<!-- spec_changelog -->.*?<!-- spec_changelog -->"
+          regexFlags: ims
+
       - name: Add label to PR
-        if: contains(steps.spec_diff.outputs.changelog, 'error	[')
+        if: inputs.diff-tool == 'oasdiff' && contains(steps.spec_diff.outputs.changelog, 'error	[')
         run: |
           gh pr edit ${{ github.event.pull_request.number }} --add-label breaking-changes
         working-directory: current
         env:
-            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}     
-  
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add label to PR
+        if: inputs.diff-tool == 'openapi-diff' && !steps.spec_diff.outputs.state.compatible
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --add-label breaking-changes
+        working-directory: current
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Labeler
         uses: actions/labeler@v5 
         with:
