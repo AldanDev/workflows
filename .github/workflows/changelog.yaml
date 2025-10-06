@@ -135,7 +135,7 @@ jobs:
         working-directory: base
 
       - name: Running OpenAPI Spec diff action
-        id: spec_diff
+        id: oasdiff
         uses: oasdiff/oasdiff-action/changelog@main
         if: ${{ inputs.diff-tool == 'oasdiff' }}
         with:
@@ -143,7 +143,7 @@ jobs:
           revision: current/artefacts/spec.yaml
 
       - name: Running OpenAPI Diff action
-        id: spec_diff
+        id: openapi_diff
         uses: Pentusha/openapi-diff-action@v0.0.1
         if: ${{ inputs.diff-tool == 'openapi-diff' }}
         with:
@@ -155,7 +155,7 @@ jobs:
         uses: nefrob/pr-description@v1.1.2
         if: ${{ inputs.diff-tool == 'oasdiff' }}
         with:
-          content: "<!-- spec_changelog -->\n${{join(steps.spec_diff.outputs.*, '\n')}}\n<!-- spec_changelog -->"
+          content: "<!-- spec_changelog -->\n${{join(steps.oasdiff.outputs.*, '\n')}}\n<!-- spec_changelog -->"
           token: ${{ secrets.GITHUB_TOKEN }}
           regex: "<!-- spec_changelog -->.*?<!-- spec_changelog -->"
           regexFlags: ims
@@ -178,7 +178,7 @@ jobs:
           regexFlags: ims
 
       - name: Add label to PR
-        if: inputs.diff-tool == 'oasdiff' && contains(steps.spec_diff.outputs.changelog, 'error	[')
+        if: inputs.diff-tool == 'oasdiff' && contains(steps.openapi_diff.outputs.changelog, 'error	[')
         run: |
           gh pr edit ${{ github.event.pull_request.number }} --add-label breaking-changes
         working-directory: current
@@ -186,7 +186,7 @@ jobs:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Add label to PR
-        if: inputs.diff-tool == 'openapi-diff' && !steps.spec_diff.outputs.state.compatible
+        if: inputs.diff-tool == 'openapi-diff' && !steps.openapi_diff.outputs.state.compatible
         run: |
           gh pr edit ${{ github.event.pull_request.number }} --add-label breaking-changes
         working-directory: current
