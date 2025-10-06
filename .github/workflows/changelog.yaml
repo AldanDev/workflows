@@ -144,7 +144,7 @@ jobs:
 
       - name: Running OpenAPI Diff action
         id: openapi_diff
-        uses: Pentusha/openapi-diff-action@v0.0.1
+        uses: Pentusha/openapi-diff-action@v0.0.2
         if: ${{ inputs.diff-tool == 'openapi-diff' }}
         with:
           old-spec: base/artefacts/spec.yaml
