@@ -164,8 +164,9 @@ jobs:
         if: ${{ inputs.diff-tool == 'openapi-diff' }}
         id: read_diff
         run: |
-          CONTENT=$(cat openapi-diff.md)
-          echo "diff_content=$CONTENT" >> $GITHUB_OUTPUT
+          echo 'diff_content<<EOF' >> $GITHUB_OUTPUT
+          cat openapi-diff.md >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
 
       - name: Update pull request
         uses: nefrob/pr-description@v1.1.2
