@@ -91,7 +91,7 @@ jobs:
 
         - name: Install dependencies
           if: ${{ inputs.package-manager == 'uv' }}
-          run: uv sync --frozen --group tests --group lint
+          run: uv sync --frozen --all-packages --all-groups
 
         - name: Compile locales
           if: ${{ inputs.use_codeartifact }}
