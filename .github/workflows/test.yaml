@@ -80,7 +80,9 @@ jobs:
 
         - name: Set uv Code Artifact token
           if: ${{ inputs.use_codeartifact && inputs.package-manager == 'uv' }}
-          run: echo "UV_INDEX=https://aws:$AWS_CODEARTIFACT_TOKEN@${{ inputs.AWS_CODEARTIFACT_DOMAIN }}.d.codeartifact.${{ inputs.AWS_CODEARTIFACT_REGION }}.amazonaws.com/pypi/simple/" >> $GITHUB_ENV
+          run: |
+            echo "UV_INDEX_ARTIFACT_USERNAME=aws" >> $GITHUB_ENV
+            echo "UV_INDEX_ARTIFACT_PASSWORD=$AWS_CODEARTIFACT_TOKEN" >> $GITHUB_ENV
 
         - name: Setup APT dependencies
           run: sudo apt-get install -y gettext
@@ -94,8 +96,12 @@ jobs:
           run: uv sync --frozen --all-packages --all-groups
 
         - name: Compile locales
-          if: ${{ inputs.use_codeartifact }}
+          if: ${{ inputs.use_codeartifact && inputs.package-manager == 'poetry' }}
           run: poetry run python -m ${{ inputs.modules }} compile
+
+        - name: Compile locales
+          if: ${{ inputs.use_codeartifact && inputs.package-manager == 'uv' }}
+          run: uv run python -m ${{ inputs.modules }} compile
 
         - name: Run lint
           run: make lint
@@ -110,4 +116,4 @@ jobs:
           if: ${{ inputs.package-manager == 'uv' }}
           run: make docker-test
           env:
-            CODEARTIFACT_TOKEN: ${{ env.UV_INDEX }}
+            CODEARTIFACT_TOKEN: ${{ env.AWS_CODEARTIFACT_TOKEN }}
