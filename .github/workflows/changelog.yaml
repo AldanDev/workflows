@@ -20,7 +20,7 @@ on:
         default: '3.12'
       poetry-version:
         type: string
-        default: '1.8.2'
+        default: '2.4.1'
       package-manager:
         type: string
         default: poetry
