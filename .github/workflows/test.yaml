@@ -89,7 +89,7 @@ jobs:
 
         - name: Install dependencies
           if: ${{ inputs.package-manager == 'poetry' }}
-          run: poetry install
+          run: poetry install --no-root
 
         - name: Install dependencies
           if: ${{ inputs.package-manager == 'uv' }}

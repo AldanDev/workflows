@@ -88,7 +88,7 @@ jobs:
           path: current
 
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --no-root
         if: ${{ inputs.package-manager == 'poetry' }}
         working-directory: current
 
@@ -118,7 +118,7 @@ jobs:
           path: base
 
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --no-root
         if: ${{ inputs.package-manager == 'poetry' }}
         working-directory: base
 
